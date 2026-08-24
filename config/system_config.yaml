@@ -1,0 +1,35 @@
+system:
+  environment: "production"
+  log_level: "INFO"
+  device: "cpu"  # "cpu" or "cuda"
+
+gateway:
+  host: "0.0.0.0"
+  port: 8000
+  max_connections: 1000
+  heartbeat_interval_sec: 15
+  jitter_buffer_ms: 40
+
+asr:
+  model_name: "ai4bharat/indic-conformer-600m-multilingual"
+  chunk_stride_ms: 80
+  context_window_ms: 640
+  sample_rate: 16000
+  quantization: "INT8"
+
+llm:
+  endpoint_url: "http://localhost:8000/v1"
+  model: "dummy-model"
+  api_key_env_var: "DUMMY_API_KEY"
+  max_tokens: 512
+  temperature: 0.7
+  timeout_sec: 10.0
+
+tts:
+  model_name: "ai4bharat/indic-parler-tts"
+  sample_rate: 24000
+  quantization: "INT8"
+  default_voice_description: "A clear female voice from South India with natural pace and clear articulation."
+
+memory_pools:
+  audio_shm_size_bytes: 10485760  # 10MB Pinned Shared Memory

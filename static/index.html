@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multilingual AI Voice Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --card-bg: rgba(18, 24, 38, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glow-cyan: 0 0 30px rgba(6, 182, 212, 0.35);
+            --glow-purple: 0 0 30px rgba(139, 92, 246, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Header */
+        header {
+            width: 100%;
+            max-width: 1100px;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        /* Container Layout */
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            padding: 24px;
+            flex: 1;
+        }
+
+        /* Main Workspace & Transcript Display */
+        .chat-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .msg-bubble {
+            max-width: 80%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            font-size: 0.98rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-bubble.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--accent-purple), #6366f1);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            box-shadow: var(--glow-purple);
+        }
+
+        .msg-bubble.assistant {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-bubble.streaming {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        /* Voice Control Center */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .mic-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .visualizer-canvas {
+            width: 100%;
+            height: 80px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .mic-btn {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--glow-cyan);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            position: relative;
+        }
+
+        .mic-btn:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
+        }
+
+        .mic-btn.recording {
+            background: linear-gradient(135deg, var(--accent-pink), #ef4444);
+            box-shadow: 0 0 40px rgba(236, 72, 153, 0.7);
+            animation: pulseRing 1.5s infinite;
+        }
+
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.5); }
+            70% { box-shadow: 0 0 0 25px rgba(236, 72, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+        }
+
+        .mic-btn svg {
+            width: 44px;
+            height: 44px;
+            fill: currentColor;
+        }
+
+        .mic-status-text {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .lang-bar {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .lang-chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-muted);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .lang-chip:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .lang-chip.active {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-color: transparent;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+        }
+
+        /* Quick Prompt Input Box */
+        .input-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .text-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .text-input:focus {
+            border-color: var(--accent-cyan);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+
+        .bargein-btn {
+            width: 100%;
+            padding: 14px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 14px;
+            color: #fca5a5;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .bargein-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+            color: #ffffff;
+        }
+
+        /* Dynamic Pipeline State Indicator Banner */
+        .pipeline-state-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pipeline-state-card.idle {
+            border-color: var(--border-color);
+        }
+
+        .pipeline-state-card.listening {
+            border-color: var(--accent-pink);
+            background: rgba(236, 72, 153, 0.08);
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.25);
+        }
+
+        .pipeline-state-card.thinking {
+            border-color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.08);
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.25);
+        }
+
+        .pipeline-state-card.speaking {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.08);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.25);
+        }
+
+        .pipeline-state-card.interrupted {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .state-info-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .state-pulse-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+
+        .state-text-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .state-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .state-subtext {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        /* Soundwave Equalizer Animation for Output Stage */
+        .soundwave-eq {
+            display: none;
+            align-items: flex-end;
+            gap: 4px;
+            height: 22px;
+        }
+
+        .pipeline-state-card.speaking .soundwave-eq {
+            display: flex;
+        }
+
+        .soundwave-eq span {
+            width: 4px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
+            animation: soundwaveBounce 0.8s infinite ease-in-out alternate;
+        }
+
+        .soundwave-eq span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+        .soundwave-eq span:nth-child(2) { height: 90%; animation-delay: 0.3s; }
+        .soundwave-eq span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+        .soundwave-eq span:nth-child(4) { height: 100%; animation-delay: 0.4s; }
+        .soundwave-eq span:nth-child(5) { height: 50%; animation-delay: 0.15s; }
+
+        @keyframes soundwaveBounce {
+            0% { height: 20%; opacity: 0.5; }
+            100% { height: 100%; opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🎙️</div>
+            <span>Multilingual AI Voice Assistant</span>
+        </div>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Conversation Stream -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <span>Real-Time Conversation & Audio Stream</span>
+                <span id="latencyBadge" style="color: var(--accent-cyan);">Latency Target: &lt;500ms</span>
+            </div>
+            <div class="chat-history" id="chatHistory">
+                <div class="msg-bubble assistant">
+                    Namaste! I am your AI Voice Assistant. Click the microphone or type below to talk with me in real-time.
+                </div>
+            </div>
+        </div>
+
+        <!-- Voice Control Panel -->
+        <div class="controls-panel">
+            <!-- Active Pipeline State Preset Banner -->
+            <div class="pipeline-state-card idle" id="pipelineStateCard">
+                <div class="state-info-group">
+                    <div class="state-pulse-icon" id="statePulseIcon">🟢</div>
+                    <div class="state-text-details">
+                        <div class="state-title" id="stateTitle" style="color: var(--accent-cyan);">SYSTEM IDLE</div>
+                        <div class="state-subtext" id="stateSubtext">Ready to receive voice or text input</div>
+                    </div>
+                </div>
+                <div class="soundwave-eq">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+
+            <div class="mic-card">
+                <div class="lang-bar">
+                    <button class="lang-chip active" onclick="setSpeechLanguage('te-IN', this)">తెలుగు (Telugu)</button>
+                    <button class="lang-chip" onclick="setSpeechLanguage('en-IN', this)">English</button>
+                    <button class="lang-chip" onclick="setSpeechLanguage('hi-IN', this)">हिन्दी (Hindi)</button>
+                    <button class="lang-chip" onclick="setSpeechLanguage('ta-IN', this)">தமிழ் (Tamil)</button>
+                    <button class="lang-chip" onclick="setSpeechLanguage('kn-IN', this)">ಕನ್ನಡ (Kannada)</button>
+                </div>
+                <canvas id="visualizer" class="visualizer-canvas"></canvas>
+                <button class="mic-btn" id="micBtn" onclick="toggleMicrophone()">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                </button>
+                <div class="mic-status-text" id="micStatus">Click Microphone to Start</div>
+            </div>
+
+            <button class="bargein-btn" id="bargeinBtn" onclick="triggerBargeIn()">
+                🛑 Stop / Interrupt Speech
+            </button>
+
+            <div class="input-card">
+                <input type="text" id="textInput" class="text-input" placeholder="Type prompt here..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" onclick="sendTextPrompt()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isRecording = false;
+        let audioContext = null;
+        let mediaStream = null;
+        let audioProcessor = null;
+        let currentAssistantBubble = null;
+        let isProcessingAudioOutput = false;
+
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const micBtn = document.getElementById('micBtn');
+        const micStatus = document.getElementById('micStatus');
+        const chatHistory = document.getElementById('chatHistory');
+        const visualizer = document.getElementById('visualizer');
+        const canvasCtx = visualizer.getContext('2d');
+
+        let activeAudioSourcesCount = 0;
+        let isSpeakingState = false;
+
+        function setPipelineState(mode, titleText, subtextText) {
+            const card = document.getElementById('pipelineStateCard');
+            const icon = document.getElementById('statePulseIcon');
+            const title = document.getElementById('stateTitle');
+            const subtext = document.getElementById('stateSubtext');
+
+            if (!card) return;
+
+            card.className = 'pipeline-state-card ' + mode;
+
+            if (mode === 'listening') {
+                icon.innerText = '🎙️';
+                title.style.color = 'var(--accent-pink)';
+                title.innerText = titleText || 'VOICE INPUT ACTIVE';
+                subtext.innerText = subtextText || 'Streaming audio data to IndicConformer ASR...';
+            } else if (mode === 'thinking') {
+                icon.innerText = '🧠';
+                title.style.color = 'var(--accent-purple)';
+                title.innerText = titleText || 'PROCESSING & THINKING';
+                subtext.innerText = subtextText || 'Generating response via Qwen/Qwen3.6-27B...';
+            } else if (mode === 'speaking') {
+                icon.innerText = '🔊';
+                title.style.color = 'var(--accent-cyan)';
+                title.innerText = titleText || 'VOICE OUTPUT STREAMING';
+                subtext.innerText = subtextText || 'Synthesizing & playing Indic-Parler-TTS audio...';
+            } else if (mode === 'interrupted') {
+                icon.innerText = '🛑';
+                title.style.color = '#ef4444';
+                title.innerText = titleText || 'SPEECH INTERRUPTED';
+                subtext.innerText = subtextText || 'Barge-in event triggered! Output halted.';
+            } else {
+                icon.innerText = '🟢';
+                title.style.color = 'var(--accent-cyan)';
+                title.innerText = titleText || 'SYSTEM IDLE';
+                subtext.innerText = subtextText || 'Ready to receive voice or text input';
+            }
+        }
+
+        // Connect to Gateway WebSocket
+        function connectWebSocket() {
+            const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/v1/audio/stream';
+            ws = new WebSocket(wsUrl);
+            ws.binaryType = 'arraybuffer';
+
+            ws.onopen = () => {
+                statusDot.classList.add('connected');
+                statusText.innerText = 'Connected';
+                setPipelineState('idle', 'SYSTEM IDLE', 'Ready to receive voice or text input');
+            };
+
+            ws.onmessage = async (event) => {
+                if (typeof event.data === 'string') {
+                    const data = JSON.parse(event.data);
+                    handleServerMessage(data);
+                } else {
+                    // Binary PCM Audio Chunk received from TTS
+                    playAudioChunk(event.data);
+                }
+            };
+
+            ws.onclose = () => {
+                statusDot.classList.remove('connected');
+                statusText.innerText = 'Disconnected';
+                setPipelineState('idle', 'GATEWAY DISCONNECTED', 'Attempting to reconnect...');
+                setTimeout(connectWebSocket, 2000);
+            };
+        }
+
+        let currentUserBubble = null;
+        let isMicMutedForOutput = false;
+
+        function pauseMicrophoneForOutput() {
+            isMicMutedForOutput = true;
+            if (micBtn) micBtn.classList.remove('recording');
+            micStatus.innerText = '🔊 Assistant Speaking... (Mic Muted)';
+        }
+
+        function resumeMicrophoneAfterOutput() {
+            if (isMicMutedForOutput) {
+                isMicMutedForOutput = false;
+                if (isRecording) {
+                    if (micBtn) micBtn.classList.add('recording');
+                    micStatus.innerText = 'Listening... Speak now!';
+                    setPipelineState('listening', 'VOICE INPUT ACTIVE', 'Microphone active...');
+                } else {
+                    micStatus.innerText = 'Click Microphone to Start';
+                    setPipelineState('idle', 'SYSTEM IDLE', 'Ready for next voice or text input');
+                }
+            }
+        }
+
+        function handleServerMessage(data) {
+            if (data.type === 'ASR_PARTIAL') {
+                micStatus.innerText = 'Listening: ' + data.text;
+                setPipelineState('listening', 'VOICE INPUT ACTIVE', 'Recognized: "' + data.text + '"');
+                if (!currentUserBubble) {
+                    currentUserBubble = appendMessage('user', data.text, true);
+                } else {
+                    currentUserBubble.innerText = data.text;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+            } else if (data.type === 'ASR_FINAL') {
+                micStatus.innerText = 'Processing...';
+                setPipelineState('thinking', 'PROCESSING PROMPT', 'User Input: "' + data.text + '"');
+                if (currentUserBubble) {
+                    currentUserBubble.innerText = data.text;
+                    currentUserBubble.classList.remove('streaming');
+                    currentUserBubble = null;
+                } else {
+                    appendMessage('user', data.text);
+                }
+            } else if (data.type === 'LLM_START') {
+                pauseMicrophoneForOutput();
+                setPipelineState('thinking', 'GENERATING RESPONSE', 'Receiving stream from LLM...');
+                currentAssistantBubble = appendMessage('assistant', '', true);
+            } else if (data.type === 'LLM_TOKEN') {
+                if (currentAssistantBubble) {
+                    currentAssistantBubble.innerText += data.token;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+            } else if (data.type === 'LLM_SENTENCE') {
+                pauseMicrophoneForOutput();
+                setPipelineState('speaking', 'VOICE OUTPUT STREAMING', 'Synthesizing Clause: "' + data.clause + '"');
+            } else if (data.type === 'RESPONSE_DONE') {
+                if (currentAssistantBubble) {
+                    currentAssistantBubble.classList.remove('streaming');
+                }
+                if (!activeAudioSourcesCount) {
+                    resumeMicrophoneAfterOutput();
+                }
+            } else if (data.type === 'INTERRUPT_ACK') {
+                resumeMicrophoneAfterOutput();
+                setPipelineState('interrupted', 'SPEECH INTERRUPTED', 'Barge-In acknowledged by Gateway');
+                if (currentAssistantBubble) {
+                    currentAssistantBubble.innerText += ' [Interrupted]';
+                    currentAssistantBubble.classList.remove('streaming');
+                }
+            }
+        }
+
+        function appendMessage(role, text, isStreaming = false) {
+            const div = document.createElement('div');
+            div.className = `msg-bubble ${role}` + (isStreaming ? ' streaming' : '');
+            div.innerText = text;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return div;
+        }
+
+        async function toggleMicrophone() {
+            if (!isRecording) {
+                await startMicrophone();
+            } else {
+                stopMicrophone();
+            }
+        }
+
+        async function checkMicrophonePermissionState() {
+            const isLocalhost = window.location.hostname === 'localhost' ||
+                                window.location.hostname === '127.0.0.1' ||
+                                window.location.hostname === '0.0.0.0' ||
+                                window.location.hostname === '::1' ||
+                                window.location.hostname.endsWith('.localhost');
+
+            if (!window.isSecureContext && !isLocalhost) {
+                return { ok: false, reason: 'insecure_context', msg: 'Microphone access requires an HTTPS, localhost, or 0.0.0.0 connection.' };
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                return { ok: false, reason: 'unsupported', msg: 'Your browser does not support audio recording (navigator.mediaDevices unavailable).' };
+            }
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    const status = await navigator.permissions.query({ name: 'microphone' });
+                    if (status.state === 'denied') {
+                        return { ok: false, reason: 'denied', msg: 'Microphone permission is blocked in browser settings. Please allow microphone access.' };
+                    }
+                } catch (e) {
+                    // Ignore permissions query API edge cases in older browser engines
+                }
+            }
+            return { ok: true };
+        }
+
+        let speechRecognition = null;
+        let currentSelectedLang = 'te-IN';
+
+        function setSpeechLanguage(langCode, btnElem) {
+            currentSelectedLang = langCode;
+            document.querySelectorAll('.lang-chip').forEach(b => b.classList.remove('active'));
+            if (btnElem) btnElem.classList.add('active');
+            if (isRecording) {
+                stopSpeechRecognition();
+                startSpeechRecognition();
+            }
+        }
+
+        function startSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+            try {
+                if (speechRecognition) {
+                    speechRecognition.abort();
+                }
+                speechRecognition = new SpeechRecognition();
+                speechRecognition.continuous = true;
+                speechRecognition.interimResults = true;
+                speechRecognition.lang = currentSelectedLang || 'te-IN';
+
+                speechRecognition.onresult = (event) => {
+                    if (isMicMutedForOutput) return;
+
+                    let interim = '';
+                    let finalStr = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalStr += event.results[i][0].transcript;
+                        } else {
+                            interim += event.results[i][0].transcript;
+                        }
+                    }
+
+                    const activeText = finalStr || interim;
+                    if (activeText && activeText.trim()) {
+                        micStatus.innerText = 'Recognized: ' + activeText;
+                        setPipelineState('listening', 'VOICE INPUT ACTIVE', 'Recognized: "' + activeText + '"');
+
+                        if (!currentUserBubble) {
+                            currentUserBubble = appendMessage('user', activeText, true);
+                        } else {
+                            currentUserBubble.innerText = activeText;
+                            chatHistory.scrollTop = chatHistory.scrollHeight;
+                        }
+
+                        if (finalStr && finalStr.trim() && ws && ws.readyState === WebSocket.OPEN) {
+                            // Send exact live spoken text to backend LLM
+                            ws.send(JSON.stringify({ type: "TEXT_PROMPT", text: finalStr.trim() }));
+                            if (currentUserBubble) {
+                                currentUserBubble.classList.remove('streaming');
+                                currentUserBubble = null;
+                            }
+                        }
+                    }
+                };
+
+                speechRecognition.start();
+            } catch (e) {
+                console.warn("SpeechRecognition start error:", e);
+            }
+        }
+
+        function stopSpeechRecognition() {
+            if (speechRecognition) {
+                try {
+                    speechRecognition.stop();
+                } catch (e) {}
+                speechRecognition = null;
+            }
+        }
+
+        async function startMicrophone() {
+            // Stop any playing audio if user activates mic
+            triggerBargeIn();
+            isMicMutedForOutput = false;
+
+            startSpeechRecognition();
+
+            const permCheck = await checkMicrophonePermissionState();
+            if (!permCheck.ok) {
+                micStatus.innerText = '⚠️ ' + permCheck.msg;
+                micStatus.style.color = '#ef4444';
+                setPipelineState('interrupted', 'MICROPHONE ACCESS ERROR', permCheck.msg);
+                alert(permCheck.msg);
+                return;
+            }
+
+            try {
+                if (!audioContext || audioContext.state === 'closed') {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                }
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        channelCount: 1
+                    }
+                });
+                
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                audioProcessor = audioContext.createScriptProcessor(2048, 1, 1);
+
+                source.connect(audioProcessor);
+                audioProcessor.connect(audioContext.destination);
+
+                audioProcessor.onaudioprocess = (e) => {
+                    if (!isRecording || isMicMutedForOutput || !ws || ws.readyState !== WebSocket.OPEN) return;
+                    const inputBuffer = e.inputBuffer.getChannelData(0);
+                    // Send PCM float32 binary buffer to WebSocket
+                    ws.send(inputBuffer.buffer);
+                };
+
+                isRecording = true;
+                micBtn.classList.add('recording');
+                micStatus.innerText = 'Listening... Speak now!';
+                micStatus.style.color = 'var(--text-muted)';
+                setPipelineState('listening', 'VOICE INPUT ACTIVE', 'Capturing microphone stream...');
+                drawVisualizer(source);
+            } catch (err) {
+                console.error("Microphone Access Error:", err);
+                let userErrMsg = "Microphone access failed.";
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    userErrMsg = "Permission denied: Please allow microphone access in your browser address bar.";
+                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    userErrMsg = "No microphone hardware detected on your device.";
+                } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                    userErrMsg = "Microphone is currently in use by another application.";
+                }
+                micStatus.innerText = '⚠️ ' + userErrMsg;
+                micStatus.style.color = '#ef4444';
+                setPipelineState('interrupted', 'MICROPHONE ACCESS DENIED', userErrMsg);
+                alert(userErrMsg);
+            }
+        }
+
+        function stopMicrophone() {
+            if (isRecording) {
+                isRecording = false;
+                isMicMutedForOutput = false;
+                currentUserBubble = null;
+                micBtn.classList.remove('recording');
+                micStatus.innerText = 'Click Microphone to Start';
+                micStatus.style.color = 'var(--text-muted)';
+                setPipelineState('thinking', 'PROCESSING SPEECH', 'Finalizing speech input & sending to server...');
+
+                stopSpeechRecognition();
+
+                if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+                if (audioProcessor) audioProcessor.disconnect();
+                if (audioContext) audioContext.close();
+
+                // Signal Speech End
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: "SPEECH_END" }));
+                }
+            }
+        }
+
+        function triggerBargeIn() {
+            nextAudioStartTime = 0;
+            isMicMutedForOutput = false;
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            setPipelineState('interrupted', 'SPEECH INTERRUPTED', 'Client requested barge-in stop');
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "INTERRUPT" }));
+            }
+        }
+
+        function sendTextPrompt() {
+            const input = document.getElementById('textInput');
+            const prompt = input.value.trim();
+            if (prompt && ws && ws.readyState === WebSocket.OPEN) {
+                setPipelineState('thinking', 'PROCESSING TEXT INPUT', 'Querying LLM with prompt...');
+                ws.send(JSON.stringify({ type: "TEXT_PROMPT", text: prompt }));
+                input.value = '';
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendTextPrompt();
+        }
+
+        // Web Audio Audio Playback for TTS Chunks (gTTS / MP3 / PCM)
+        let nextAudioStartTime = 0;
+
+        async function playAudioChunk(data) {
+            if (!audioContext || audioContext.state === 'closed') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            try {
+                let arrayBuffer;
+                if (data instanceof ArrayBuffer) {
+                    arrayBuffer = data;
+                } else if (data instanceof Blob) {
+                    arrayBuffer = await data.arrayBuffer();
+                } else {
+                    return;
+                }
+
+                if (!arrayBuffer || arrayBuffer.byteLength === 0) return;
+
+                // Decode real human speech audio format (MP3/WAV/AAC)
+                audioContext.decodeAudioData(arrayBuffer.slice(0), (audioBuf) => {
+                    const source = audioContext.createBufferSource();
+                    source.buffer = audioBuf;
+
+                    // Apply smooth GainNode volume envelope to eliminate click/pop on sentence boundaries
+                    const gainNode = audioContext.createGain();
+                    source.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    const currentTime = audioContext.currentTime;
+                    if (nextAudioStartTime < currentTime) {
+                        nextAudioStartTime = currentTime;
+                    }
+
+                    // 15ms exponential volume ramp for 100% smooth, continuous sentence transitions
+                    gainNode.gain.setValueAtTime(0.01, nextAudioStartTime);
+                    gainNode.gain.exponentialRampToValueAtTime(1.0, nextAudioStartTime + 0.015);
+                    
+                    source.start(nextAudioStartTime);
+                    nextAudioStartTime += audioBuf.duration;
+
+                    activeAudioSourcesCount++;
+                    setPipelineState('speaking', 'VOICE OUTPUT STREAMING', 'Playing smooth human voice stream...');
+
+                    source.onended = () => {
+                        activeAudioSourcesCount = Math.max(0, activeAudioSourcesCount - 1);
+                        if (activeAudioSourcesCount === 0) {
+                            nextAudioStartTime = 0;
+                            setPipelineState(isRecording ? 'listening' : 'idle');
+                        }
+                    };
+                }, (decodeErr) => {
+                    // Fallback to raw PCM float32 array if decodeAudioData fails
+                    try {
+                        const float32Array = new Float32Array(arrayBuffer);
+                        if (float32Array && float32Array.length > 0) {
+                            const audioBuf = audioContext.createBuffer(1, float32Array.length, 24000);
+                            audioBuf.getChannelData(0).set(float32Array);
+                            const source = audioContext.createBufferSource();
+                            source.buffer = audioBuf;
+                            source.connect(audioContext.destination);
+
+                            const currentTime = audioContext.currentTime;
+                            if (nextAudioStartTime < currentTime) {
+                                nextAudioStartTime = currentTime;
+                            }
+                            source.start(nextAudioStartTime);
+                            nextAudioStartTime += audioBuf.duration;
+
+                            activeAudioSourcesCount++;
+                            setPipelineState('speaking', 'VOICE OUTPUT STREAMING', 'Playing audio chunk...');
+
+                            source.onended = () => {
+                                activeAudioSourcesCount = Math.max(0, activeAudioSourcesCount - 1);
+                                if (activeAudioSourcesCount === 0) {
+                                    nextAudioStartTime = 0;
+                                    setPipelineState(isRecording ? 'listening' : 'idle');
+                                }
+                            };
+                        }
+                    } catch(e) {}
+                });
+            } catch(e) {
+                console.error("Audio Playback error:", e);
+            }
+        }
+
+        function drawVisualizer(source) {
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 64;
+            source.connect(analyser);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function renderFrame() {
+                if (!isRecording) {
+                    canvasCtx.clearRect(0, 0, visualizer.width, visualizer.height);
+                    return;
+                }
+                requestAnimationFrame(renderFrame);
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = 'rgba(9, 13, 22, 0.4)';
+                canvasCtx.fillRect(0, 0, visualizer.width, visualizer.height);
+
+                const barWidth = (visualizer.width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i] / 4;
+                    canvasCtx.fillStyle = `rgb(6, 182, ${150 + i * 3})`;
+                    canvasCtx.fillRect(x, visualizer.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 2;
+                }
+            }
+            renderFrame();
+        }
+
+        connectWebSocket();
+    </script>
+</body>
+</html>

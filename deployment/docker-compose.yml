@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.gateway
+    container_name: voice_assistant_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OMP_NUM_THREADS=4
+      - MKL_NUM_THREADS=4
+      - KMP_AFFINITY=granularity=fine,compact,1,0
+    volumes:
+      - ../config:/app/config
+    restart: always
+    ipc: host  # Shared memory IPC access
